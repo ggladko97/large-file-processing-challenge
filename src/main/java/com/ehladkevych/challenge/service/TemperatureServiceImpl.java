@@ -96,7 +96,7 @@ public class TemperatureServiceImpl implements TemperatureService {
 
     void processChunks(List<Set<TemperatureData>> chunksToProcess) {
         chunksToProcess
-                .stream()
+                .parallelStream()
                 .map(td -> td.stream().map(TemperatureConverter::toTemperature).collect(Collectors.toSet()))
                 .forEach(temperatureDao::saveAll);
     }

@@ -18,7 +18,7 @@ public class CityWeatherDataController {
         this.temperatureService = temperatureService;
     }
 
-    @GetMapping("/{city}/temperature")
+    @GetMapping("/temperature/{city}")
     public ResponseEntity<List<TemperatureDataResult>> getTemperatureData(@PathVariable String city) {
         return ResponseEntity.ok(temperatureService.getAverage(city));
     }
