@@ -15,16 +15,18 @@ import java.util.concurrent.TimeUnit;
 public class SqliteDbManagerService implements ApplicationListener<ContextRefreshedEvent> {
 
     private final TemperatureDao temperatureDao;
+    private final TemperatureService temperatureService;
 
     @Autowired
-    public SqliteDbManagerService(TemperatureDao temperatureDao) {
+    public SqliteDbManagerService(TemperatureDao temperatureDao, TemperatureService temperatureService) {
         this.temperatureDao = temperatureDao;
+        this.temperatureService = temperatureService;
     }
 
     @Async
     @Scheduled(fixedRate = 10, timeUnit = TimeUnit.MINUTES)
     public void scheduleFixedRateTaskAsync() throws InterruptedException {
-
+        temperatureService.refresh();
     }
 
     @Override

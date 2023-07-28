@@ -8,7 +8,7 @@ public interface TemperatureService {
 
     String CSV_SEMICOLON_DELIMITER = ";";
 
-    void loadTemperature();
-
     List<TemperatureDataResult> getAverage(String city);
+
+    void refresh();
 }

@@ -1,8 +1,7 @@
 package com.ehladkevych.challenge.dao;
 
 import com.ehladkevych.challenge.dao.entity.Temperature;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.ehladkevych.challenge.dao.entity.TemperatureWithAverage;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -13,17 +12,8 @@ import java.util.List;
 @Repository
 public interface TemperatureRepository extends CrudRepository<Temperature, Long> {
 
-    @Query(value = "SELECT new TemperatureWithAverage(city, `year`, avg(temperature)) FROM temperature_data where city = :city " +
-            "group by city, year order by year desc")
+    @Query(value = "SELECT t.city as city, t.year as year, avg(t.temperature) as average FROM temperature_data t where t.city = :city " +
+            "group by t.city, t.year order by t.year desc", resultSetExtractorClass = TemperatureAverageResultSetExtractor.class)
     List<TemperatureWithAverage> calculateAvgForCity(@Param("city") String city);
 
-    @Data
-    @AllArgsConstructor
-    class TemperatureWithAverage {
-
-        private String city;
-        private Integer year;
-        private Float average;
-
-    }
 }

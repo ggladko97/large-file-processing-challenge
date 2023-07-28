@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+
 
 @ControllerAdvice
 public class ExceptionInterceptor extends ResponseEntityExceptionHandler {
@@ -18,9 +21,10 @@ public class ExceptionInterceptor extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> badRequest(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = "Please check request params";
         return handleExceptionInternal(ex,
-                bodyOfResponse,
+                ResponseEntity.status(BAD_REQUEST)
+                        .body(bodyOfResponse),
                 new HttpHeaders(),
-                HttpStatus.BAD_REQUEST,
+                BAD_REQUEST,
                 request);
     }
 
@@ -29,7 +33,8 @@ public class ExceptionInterceptor extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> internal(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = "Internal Server Error, please check logs";
         return handleExceptionInternal(ex,
-                bodyOfResponse,
+                ResponseEntity.status(INTERNAL_SERVER_ERROR)
+                        .body(bodyOfResponse),
                 new HttpHeaders(),
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 request);
@@ -40,7 +45,8 @@ public class ExceptionInterceptor extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> unrecognized(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = "Unrecognized Server Error, please check logs";
         return handleExceptionInternal(ex,
-                bodyOfResponse,
+                ResponseEntity.status(INTERNAL_SERVER_ERROR)
+                        .body(bodyOfResponse),
                 new HttpHeaders(),
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 request);

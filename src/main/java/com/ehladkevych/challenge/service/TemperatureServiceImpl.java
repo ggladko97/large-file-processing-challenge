@@ -2,7 +2,7 @@ package com.ehladkevych.challenge.service;
 
 import com.ehladkevych.challenge.dao.TemperatureConverter;
 import com.ehladkevych.challenge.dao.TemperatureDao;
-import com.ehladkevych.challenge.dao.TemperatureRepository;
+import com.ehladkevych.challenge.dao.entity.TemperatureWithAverage;
 import com.ehladkevych.challenge.dto.TemperatureDataResult;
 import com.ehladkevych.challenge.entity.TemperatureData;
 import com.ehladkevych.challenge.exception.DataProcessingException;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class TemperatureServiceImpl implements TemperatureService {
 
     private final FileManager fileManager;
-    private static final int CHUNK_SIZE = 1000;
+    private static final int CHUNK_SIZE = 500;
     private static final int MAX_CHUNKS = 8;
     private final TemperatureDao temperatureDao;
 
@@ -39,8 +39,32 @@ public class TemperatureServiceImpl implements TemperatureService {
     }
 
     @Override
-    public void loadTemperature() {
+    public List<TemperatureDataResult> getAverage(String city) {
+        File file = fileManager.createFile();
+        if (fileManager.shouldReloadAndRecalculate(file)) {
+            log.info("File has been changed, reloading the data");
+            temperatureDao.cleanup();
+            loadTemperature();
+            log.info("Data has been re-loaded");
+            return getAverageFromDB(city);
+        }
+        log.info("Weather file hasn't been updated since the last run, " +
+                "getting the result from the DB");
+        return getAverageFromDB(city);
+    }
 
+    @Override
+    public void refresh() {
+        File file = fileManager.createFile();
+        if (fileManager.shouldReloadAndRecalculate(file)) {
+            log.info("File has been changed, reloading the data");
+            temperatureDao.cleanup();
+            loadTemperature();
+        }
+        log.info("Weather file hasn't been updated since the last run");
+    }
+
+    private void loadTemperature() {
         File file = fileManager.createFile();
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -70,30 +94,15 @@ public class TemperatureServiceImpl implements TemperatureService {
         fileManager.updateLastModifiedForFile(file);
     }
 
-    @Override
-    public List<TemperatureDataResult> getAverage(String city) {
-        File file = fileManager.createFile();
-        if (fileManager.shouldReloadAndRecalculate(file)) {
-            log.info("File has been changed, reloading the data");
-            temperatureDao.cleanup();
-            loadTemperature();
-            log.info("Data has been re-loaded");
-            return getAverageFromDB(city);
-        }
-        log.info("Weather file hasn't been updated since the last run, " +
-                "getting the result from the DB");
-        return getAverageFromDB(city);
-    }
-
     void processChunks(List<Set<TemperatureData>> chunksToProcess) {
         chunksToProcess
-                .parallelStream()
+                .stream()
                 .map(td -> td.stream().map(TemperatureConverter::toTemperature).collect(Collectors.toSet()))
-                .peek(temperatureDao::saveAll);
+                .forEach(temperatureDao::saveAll);
     }
 
     private List<TemperatureDataResult> getAverageFromDB(String city) {
-        final List<TemperatureRepository.TemperatureWithAverage> averageForCity = temperatureDao.getAverageForCity(city);
+        final List<TemperatureWithAverage> averageForCity = temperatureDao.getAverageForCity(city);
         return TemperatureConverter.fromTemperature(averageForCity);
     }
 
